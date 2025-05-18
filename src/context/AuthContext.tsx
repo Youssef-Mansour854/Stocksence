@@ -66,19 +66,53 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signUp = async (email: string, password: string, fullName: string) => {
-    const { error, data } = await supabase.auth.signUp({ email, password });
-    
-    if (!error && data.user) {
-      // Create user profile
-      await supabase.from('users').insert({
-        id: data.user.id,
+    try {
+      // First check if user exists
+      const { data: existingUser } = await supabase
+        .from('users')
+        .select('id')
+        .eq('email', email)
+        .single();
+
+      if (existingUser) {
+        return { error: { message: 'User already registered' } };
+      }
+
+      // If user doesn't exist, proceed with signup
+      const { data, error: signUpError } = await supabase.auth.signUp({
         email,
-        fullName,
-        createdAt: new Date().toISOString(),
+        password,
+        options: {
+          data: {
+            full_name: fullName
+          }
+        }
       });
+
+      if (signUpError) {
+        return { error: signUpError };
+      }
+
+      if (data.user) {
+        // Create user profile
+        const { error: profileError } = await supabase.from('users').insert({
+          id: data.user.id,
+          email,
+          fullName,
+          createdAt: new Date().toISOString(),
+        });
+
+        if (profileError) {
+          // If profile creation fails, delete the auth user
+          await supabase.auth.admin.deleteUser(data.user.id);
+          return { error: profileError };
+        }
+      }
+
+      return { error: null };
+    } catch (error) {
+      return { error };
     }
-    
-    return { error };
   };
 
   const signOut = async () => {
