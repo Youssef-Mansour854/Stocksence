@@ -37,7 +37,16 @@ const AuthForm: React.FC = () => {
         }
         
         const { error } = await signUp(email, password, fullName);
-        if (error) throw error;
+        if (error) {
+          // Check if the error is due to an existing user
+          if (error.message === 'User already registered') {
+            showAlert('error', 'An account with this email already exists. Please try logging in instead.');
+            setMode('login');
+          } else {
+            throw error;
+          }
+          return;
+        }
         showAlert('success', 'Account created successfully! You can now log in.');
         setMode('login');
       }
