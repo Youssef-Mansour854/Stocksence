@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import LandingPage from './pages/LandingPage';
 import AuthPage from './pages/AuthPage';
 import { AuthProvider } from './context/AuthContext';
+import { AlertProvider } from './context/AlertContext';
 import './i18n';
 
 function App() {
@@ -13,12 +14,14 @@ function App() {
   return (
     <div dir={dir} className="min-h-screen bg-white dark:bg-gray-900 transition-colors duration-200">
       <AuthProvider>
-        <Router>
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/auth" element={<AuthPage />} />
-          </Routes>
-        </Router>
+        <AlertProvider>
+          <Router>
+            <Routes>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/auth" element={<AuthPage />} />
+            </Routes>
+          </Router>
+        </AlertProvider>
       </AuthProvider>
     </div>
   );
