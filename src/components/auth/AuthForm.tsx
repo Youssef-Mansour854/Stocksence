@@ -47,6 +47,11 @@ const AuthForm: React.FC = () => {
       showAlert('error', 'Password must be at least 6 characters long');
       return;
     }
+
+    if (mode === 'register' && !fullName.trim()) {
+      showAlert('error', 'Please enter your full name');
+      return;
+    }
     
     setLoading(true);
     
@@ -59,19 +64,13 @@ const AuthForm: React.FC = () => {
           } else {
             showAlert('error', 'An error occurred during sign in. Please try again.');
           }
+          setLoading(false);
           return;
         }
         showAlert('success', 'Successfully logged in!');
       } else {
-        if (!fullName.trim()) {
-          showAlert('error', 'Please enter your full name');
-          setLoading(false);
-          return;
-        }
-        
         const { error } = await signUp(email, password, fullName);
         if (error) {
-          // Check if the error is due to an existing user
           if (error.message === 'User already registered' || error.message.includes('user_already_exists')) {
             showAlert('error', 'An account with this email already exists. Please try logging in instead.');
             setMode('login');
@@ -79,6 +78,8 @@ const AuthForm: React.FC = () => {
             return;
           } else {
             showAlert('error', 'An error occurred during registration. Please try again.');
+            setLoading(false);
+            return;
           }
         } else {
           showAlert('success', 'Account created successfully! You can now log in.');
