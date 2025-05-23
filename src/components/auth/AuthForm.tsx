@@ -15,19 +15,52 @@ const AuthForm: React.FC = () => {
   
   const { signIn, signUp } = useAuth();
   const { showAlert } = useAlert();
+
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
   
   const toggleMode = () => {
     setMode(mode === 'login' ? 'register' : 'login');
+    // Clear form when switching modes
+    setEmail('');
+    setPassword('');
+    setFullName('');
   };
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Client-side validation
+    if (!email.trim() || !password.trim()) {
+      showAlert('error', 'Please fill in all required fields');
+      return;
+    }
+
+    if (!validateEmail(email)) {
+      showAlert('error', 'Please enter a valid email address');
+      return;
+    }
+
+    if (password.length < 6) {
+      showAlert('error', 'Password must be at least 6 characters long');
+      return;
+    }
+    
     setLoading(true);
     
     try {
       if (mode === 'login') {
         const { error } = await signIn(email, password);
-        if (error) throw error;
+        if (error) {
+          if (error.message === 'Invalid login credentials' || error.message.includes('invalid_credentials')) {
+            showAlert('error', 'Invalid email or password. Please check your credentials and try again.');
+          } else {
+            showAlert('error', 'An error occurred during sign in. Please try again.');
+          }
+          return;
+        }
         showAlert('success', 'Successfully logged in!');
       } else {
         if (!fullName.trim()) {
@@ -43,9 +76,9 @@ const AuthForm: React.FC = () => {
             showAlert('error', 'An account with this email already exists. Please try logging in instead.');
             setMode('login');
             setLoading(false);
-            return; // Return here to prevent throwing the error
+            return;
           } else {
-            throw error;
+            showAlert('error', 'An error occurred during registration. Please try again.');
           }
         } else {
           showAlert('success', 'Account created successfully! You can now log in.');
@@ -53,7 +86,7 @@ const AuthForm: React.FC = () => {
         }
       }
     } catch (error: any) {
-      showAlert('error', error.message || 'Authentication failed');
+      showAlert('error', 'An unexpected error occurred. Please try again later.');
     } finally {
       setLoading(false);
     }
